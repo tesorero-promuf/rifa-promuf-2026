@@ -135,6 +135,7 @@
     <div class="hint">Tus datos se guardan localmente en el navegador y se sincronizan con Firebase. Nadie más puede modificar tu configuración.</div>
     <div id="setupError" style="display:none;background:var(--rob);color:var(--ro);border:1px solid var(--ro);border-radius:8px;padding:10px;font-size:.8rem;margin-bottom:12px;text-align:left"></div>
     <button class="btn bp" onclick="saveSetup()" style="width:100%;justify-content:center;padding:12px;font-size:.95rem">🚀 Conectar y Abrir la App</button>
+    <button class="btn bo" onclick="clearConfig()" style="width:100%;justify-content:center;padding:8px;font-size:.8rem;margin-top:8px">🗑️ Borrar configuración guardada</button>
   </div>
 </div>
 
@@ -235,8 +236,8 @@
 
 <div class="tc3" id="toasts"></div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" onerror="sdkFail()"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" onerror="sdkFail()"></script>
 <script>
 var storage = {};
 try { storage = localStorage; } catch(e) {}
@@ -245,6 +246,17 @@ var cfgRaw = null;
 try { cfgRaw = storage.getItem('fb_config'); } catch(e) {}
 
 let db;
+var sdkFailed = false;
+
+function sdkFail() {
+  sdkFailed = true;
+  showSetupError('⚠️ No se pudo cargar el SDK de Firebase. Revisa tu conexión a internet o desactiva bloqueadores de anuncios, y recarga la página.');
+}
+
+window.onerror = function(msg) {
+  showSetupError('⚠️ Error interno: ' + msg);
+  return false;
+};
 
 function showToast(msg, type) {
   type = type || 'i';
@@ -259,7 +271,10 @@ function showToast(msg, type) {
 function showSetupError(msg) {
   var el = document.getElementById('setupError');
   if (el) { el.textContent = msg; el.style.display = 'block'; }
-  showToast(msg, 'e');
+}
+
+function showSetupScreen() {
+  document.getElementById('setupScreen').classList.add('on');
 }
 
 function parseConfig(raw) {
@@ -270,6 +285,11 @@ function parseConfig(raw) {
   text = text.replace(/^\s*\{\s*$/, '{');
   return JSON.parse(text);
 }
+
+window.clearConfig = function() {
+  try { storage.removeItem('fb_config'); } catch(e) {}
+  try { location.reload(); } catch(e) {}
+};
 
 window.saveSetup = function() {
   var raw = document.getElementById('configInput').value.trim();
@@ -289,25 +309,31 @@ window.saveSetup = function() {
 
 function initApp(cfg) {
   try {
-    if (!window.firebase || !firebase.database) {
+    if (sdkFailed || !window.firebase || !firebase.database) {
       return showSetupError('El SDK de Firebase no cargó. Revisa tu conexión a internet y recarga la página.');
     }
-    firebase.initializeApp(cfg);
+    if (!firebase.apps.length) firebase.initializeApp(cfg);
     db = firebase.database();
     document.getElementById('setupScreen').classList.remove('on');
     listenTickets();
     listenMembers();
     listenActivity();
     document.getElementById('connSt').innerHTML = '<span class="dot dot-on"></span> Conectado';
+    setTimeout(function() {
+      if (!Object.keys(tickets).length) {
+        showSetupScreen();
+        showSetupError('⚠️ La app abrió pero Firebase no envía datos. Causas más comunes: 1) En tu consola de Firebase ve a Realtime Database > Reglas y publica: { "rules": { ".read": true, ".write": true } }  2) Revisa que el databaseURL sea correcto.');
+      }
+    }, 6000);
   } catch(e) {
     showSetupError('Error al conectar: ' + e.message);
   }
 }
 
 if (cfgRaw) {
-  try { initApp(JSON.parse(cfgRaw)); } catch(e) { document.getElementById('setupScreen').classList.add('on'); }
+  try { initApp(JSON.parse(cfgRaw)); } catch(e) { showSetupScreen(); }
 } else {
-  document.getElementById('setupScreen').classList.add('on');
+  showSetupScreen();
 }
 
 // --- State ---
@@ -334,6 +360,14 @@ function listenTickets() {
         init[n] = { number: n, status: 'Disponible', buyer_name: '', phone: '', responsible: '', amount: 5, payment_date: '', created: Date.now(), updated: Date.now() };
       }
       tRef.set(init);
+    }
+  }).catch(function(err) {
+    if (err && err.code === 'PERMISSION_DENIED') {
+      showSetupScreen();
+      showSetupError('⛔ Firebase rechazó el acceso. En tu consola de Firebase: Realtime Database > Reglas, y publica exactamente: { "rules": { ".read": true, ".write": true } }');
+    } else if (err) {
+      showSetupScreen();
+      showSetupError('⚠️ Error de Firebase: ' + (err.message || err.code || err));
     }
   });
   tRef.on('value', function(s) {
