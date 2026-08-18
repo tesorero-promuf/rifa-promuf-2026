@@ -234,29 +234,27 @@
 
 <div class="tc3" id="toasts"></div>
 
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getDatabase, ref, set, get, update, push, onValue, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
-
-// --- Config ---
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
 const cfgRaw = localStorage.getItem('fb_config');
-let firebaseApp, db;
+let db;
 
-function showToast(msg, type='i') {
-  const c = document.getElementById('toasts');
-  const t = document.createElement('div');
-  t.className = `tt tt-${type}`;
+function showToast(msg, type) {
+  type = type || 'i';
+  var c = document.getElementById('toasts');
+  var t = document.createElement('div');
+  t.className = 'tt tt-' + type;
   t.textContent = msg;
   c.appendChild(t);
-  setTimeout(() => t.remove(), 3500);
+  setTimeout(function() { t.remove(); }, 3500);
 }
 
-// --- Setup ---
 window.saveSetup = function() {
-  const raw = document.getElementById('configInput').value.trim();
+  var raw = document.getElementById('configInput').value.trim();
   if (!raw) return showToast('Pega tu configuración de Firebase', 'e');
   try {
-    const cfg = JSON.parse(raw);
+    var cfg = JSON.parse(raw);
     if (!cfg.databaseURL) return showToast('Falta databaseURL en la config', 'e');
     localStorage.setItem('fb_config', JSON.stringify(cfg));
     initApp(cfg);
@@ -267,8 +265,8 @@ window.saveSetup = function() {
 
 function initApp(cfg) {
   try {
-    firebaseApp = initializeApp(cfg);
-    db = getDatabase(firebaseApp);
+    firebase.initializeApp(cfg);
+    db = firebase.database();
     document.getElementById('setupScreen').classList.remove('on');
     listenTickets();
     listenMembers();
@@ -286,35 +284,32 @@ if (cfgRaw) {
 }
 
 // --- State ---
-let tickets = {};
-let members = {};
-let activity = {};
-let curF = 'all';
-let sel = new Set();
+var tickets = {};
+var members = {};
+var activity = {};
+var curF = 'all';
+var sel = new Set();
 
-// --- Tabs ---
 window.go = function(t) {
-  document.querySelectorAll('.tab').forEach(e => e.classList.remove('on'));
-  document.querySelector(`.tab[data-t="${t}"]`).classList.add('on');
-  document.querySelectorAll('.tc').forEach(e => e.classList.remove('on'));
-  document.getElementById('v-'+t).classList.add('on');
+  document.querySelectorAll('.tab').forEach(function(e) { e.classList.remove('on'); });
+  document.querySelector('.tab[data-t="' + t + '"]').classList.add('on');
+  document.querySelectorAll('.tc').forEach(function(e) { e.classList.remove('on'); });
+  document.getElementById('v-' + t).classList.add('on');
 };
 
-// --- Listeners ---
 function listenTickets() {
-  const tRef = ref(db, 'tickets');
-  // Initialize if empty
-  get(tRef).then(snap => {
+  var tRef = db.ref('tickets');
+  tRef.once('value').then(function(snap) {
     if (!snap.exists()) {
-      const init = {};
-      for (let i = 0; i < 100; i++) {
-        const n = String(i).padStart(2, '0');
+      var init = {};
+      for (var i = 0; i < 100; i++) {
+        var n = String(i).padStart(2, '0');
         init[n] = { number: n, status: 'Disponible', buyer_name: '', phone: '', responsible: '', amount: 5, payment_date: '', created: Date.now(), updated: Date.now() };
       }
-      set(tRef, init);
+      tRef.set(init);
     }
   });
-  onValue(tRef, s => {
+  tRef.on('value', function(s) {
     tickets = s.val() || {};
     renderGrid();
     calcStats();
@@ -322,35 +317,33 @@ function listenTickets() {
 }
 
 function listenMembers() {
-  const mRef = ref(db, 'members');
-  get(mRef).then(snap => {
+  var mRef = db.ref('members');
+  mRef.once('value').then(function(snap) {
     if (!snap.exists()) {
-      set(mRef, { 1:{id:1,name:'Directiva 1'}, 2:{id:2,name:'Directiva 2'}, 3:{id:3,name:'Directiva 3'}, 4:{id:4,name:'Directiva 4'}, 5:{id:5,name:'Directiva 5'}, _next:6 });
+      mRef.set({ 1:{id:1,name:'Directiva 1'}, 2:{id:2,name:'Directiva 2'}, 3:{id:3,name:'Directiva 3'}, 4:{id:4,name:'Directiva 4'}, 5:{id:5,name:'Directiva 5'}, _next:6 });
     }
   });
-  onValue(mRef, s => {
+  mRef.on('value', function(s) {
     members = s.val() || {};
     renderMembers();
   });
 }
 
 function listenActivity() {
-  const aRef = ref(db, 'activity');
-  onValue(aRef, s => {
+  db.ref('activity').on('value', function(s) {
     activity = s.val() || {};
     renderActivity();
   });
 }
 
-// --- Stats ---
 function calcStats() {
-  const arr = Object.values(tickets);
-  const tot = arr.length || 100;
-  const d = arr.filter(t => t.status === 'Disponible').length;
-  const r = arr.filter(t => t.status === 'Reservado').length;
-  const v = arr.filter(t => t.status === 'Vendido').length;
-  const rc = arr.filter(t => t.status === 'Vendido').reduce((s,t) => s + (t.amount||0), 0);
-  const pc = arr.filter(t => t.status === 'Reservado').reduce((s,t) => s + (t.amount||0), 0);
+  var arr = Object.values(tickets);
+  var tot = arr.length || 100;
+  var d = arr.filter(function(t) { return t.status === 'Disponible'; }).length;
+  var r = arr.filter(function(t) { return t.status === 'Reservado'; }).length;
+  var v = arr.filter(function(t) { return t.status === 'Vendido'; }).length;
+  var rc = arr.filter(function(t) { return t.status === 'Vendido'; }).reduce(function(s,t) { return s + (t.amount||0); }, 0);
+  var pc = arr.filter(function(t) { return t.status === 'Reservado'; }).reduce(function(s,t) { return s + (t.amount||0); }, 0);
   document.getElementById('sT').textContent = tot;
   document.getElementById('sD').textContent = d;
   document.getElementById('sR').textContent = r;
@@ -362,33 +355,33 @@ function calcStats() {
     document.getElementById('bR').style.width = (r/tot*100)+'%';
     document.getElementById('bV').style.width = (v/tot*100)+'%';
   }
-  // Chart
-  const resp = {};
-  arr.filter(t => t.status === 'Vendido' && t.responsible).forEach(t => {
+  var resp = {};
+  arr.filter(function(t) { return t.status === 'Vendido' && t.responsible; }).forEach(function(t) {
     if (!resp[t.responsible]) resp[t.responsible] = { name: t.responsible, count: 0, total: 0 };
     resp[t.responsible].count++;
     resp[t.responsible].total += t.amount || 0;
   });
-  const rArr = Object.values(resp).sort((a,b) => b.count - a.count);
-  const ch = document.getElementById('rChart');
+  var rArr = Object.values(resp).sort(function(a,b) { return b.count - a.count; });
+  var ch = document.getElementById('rChart');
   if (!rArr.length) { ch.innerHTML = '<div class="nd">Aún no hay ventas registradas</div>'; return; }
-  const mx = Math.max(...rArr.map(r => r.count));
-  ch.innerHTML = rArr.map(r => `<div class="rr"><span class="rn">${r.name}</span><div class="rbw"><div class="rb" style="width:${r.count/mx*100}%">${r.count}</div></div><span class="rct">$${r.total}</span></div>`).join('');
+  var mx = Math.max.apply(null, rArr.map(function(r) { return r.count; }));
+  ch.innerHTML = rArr.map(function(r) {
+    return '<div class="rr"><span class="rn">' + r.name + '</span><div class="rbw"><div class="rb" style="width:' + (r.count/mx*100) + '%">' + r.count + '</div></div><span class="rct">$' + r.total + '</span></div>';
+  }).join('');
 }
 
-// --- Grid ---
 function renderGrid() {
-  const g = document.getElementById('grid');
-  const s = (document.getElementById('sIn')?.value || '').toLowerCase();
-  const arr = Object.values(tickets).sort((a,b) => a.number.localeCompare(b.number));
-  g.innerHTML = arr.map(t => {
-    const st = t.status === 'Disponible' ? 'td' : t.status === 'Reservado' ? 'tr' : 'tv';
-    const mf = curF === 'all' || t.status === curF;
-    const ms = !s || t.number.includes(s) || (t.buyer_name||'').toLowerCase().includes(s) || (t.responsible||'').toLowerCase().includes(s);
-    const hid = (!mf || !ms) ? 'hid' : '';
-    const sl = sel.has(t.number) ? 'sel' : '';
-    const sub = t.status === 'Disponible' ? '' : (t.buyer_name || t.status);
-    return `<div class="tc2 ${st} ${hid} ${sl}" data-n="${t.number}" onclick="hClick(event,'${t.number}')" ondblclick="openM('${t.number}')"><span class="tn">${t.number}</span><span class="ts">${sub}</span></div>`;
+  var g = document.getElementById('grid');
+  var s = (document.getElementById('sIn') ? document.getElementById('sIn').value : '').toLowerCase();
+  var arr = Object.values(tickets).sort(function(a,b) { return a.number.localeCompare(b.number); });
+  g.innerHTML = arr.map(function(t) {
+    var st = t.status === 'Disponible' ? 'td' : t.status === 'Reservado' ? 'tr' : 'tv';
+    var mf = curF === 'all' || t.status === curF;
+    var ms = !s || t.number.includes(s) || (t.buyer_name||'').toLowerCase().includes(s) || (t.responsible||'').toLowerCase().includes(s);
+    var hid = (!mf || !ms) ? 'hid' : '';
+    var sl = sel.has(t.number) ? 'sel' : '';
+    var sub = t.status === 'Disponible' ? '' : (t.buyer_name || t.status);
+    return '<div class="tc2 ' + st + ' ' + hid + ' ' + sl + '" data-n="' + t.number + '" onclick="hClick(event,\'' + t.number + '\')" ondblclick="openM(\'' + t.number + '\')"><span class="tn">' + t.number + '</span><span class="ts">' + sub + '</span></div>';
   }).join('');
 }
 
@@ -404,8 +397,8 @@ window.filter = function() { renderGrid(); };
 
 window.setF = function(f) {
   curF = f;
-  document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
-  document.querySelector(`.fbtn[data-f="${f}"]`).classList.add('on');
+  document.querySelectorAll('.fbtn').forEach(function(b) { b.classList.remove('on'); });
+  document.querySelector('.fbtn[data-f="' + f + '"]').classList.add('on');
   renderGrid();
 };
 
@@ -414,25 +407,21 @@ function updateBA() {
   document.getElementById('bc').textContent = sel.size + ' sel.';
 }
 
-window.bulk = async function(status) {
+window.bulk = function(status) {
   if (!sel.size) return;
-  const updates = {};
-  sel.forEach(n => { updates['tickets/'+n+'/status'] = status; updates['tickets/'+n+'/updated'] = Date.now(); });
-  // Log
-  const aRef = ref(db, 'activity');
-  const key = push(aRef).key;
-  updates['activity/'+key] = { action:'masivo', ticket: [...sel].join(','), details: sel.size+' números → '+status, ts: Date.now() };
-  try {
-    await update(ref(db), updates);
+  var updates = {};
+  sel.forEach(function(n) { updates['tickets/' + n + '/status'] = status; updates['tickets/' + n + '/updated'] = Date.now(); });
+  var aRef = db.ref('activity');
+  var key = aRef.push().key;
+  updates['activity/' + key] = { action:'masivo', ticket: Array.from(sel).join(','), details: sel.size + ' números → ' + status, ts: Date.now() };
+  db.ref().update(updates).then(function() {
     sel.clear(); updateBA();
-    showToast(sel.size + ' números actualizados', 's');
-  } catch(e) { showToast('Error: '+e.message, 'e'); }
-  showToast(sel.size + ' números → ' + status, 's');
+    showToast('Números actualizados', 's');
+  }).catch(function(e) { showToast('Error: ' + e.message, 'e'); });
 };
 
-// --- Modal ---
-window.openM = async function(n) {
-  const t = tickets[n];
+window.openM = function(n) {
+  var t = tickets[n];
   if (!t) return;
   document.getElementById('mT').textContent = 'Editar Número ' + n;
   document.getElementById('eN').value = n;
@@ -441,10 +430,12 @@ window.openM = async function(n) {
   document.getElementById('ePh').value = t.phone || '';
   document.getElementById('eA').value = t.amount || 5;
   document.getElementById('ePd').value = t.payment_date || '';
-  document.querySelectorAll('.sbb').forEach(b => b.classList.toggle('on', b.dataset.s === t.status));
-  const sel2 = document.getElementById('eR');
-  const memArr = Object.values(members).filter(m => typeof m === 'object' && m.id);
-  sel2.innerHTML = '<option value="">Seleccionar...</option>' + memArr.map(m => `<option value="${m.name}" ${m.name === t.responsible ? 'selected' : ''}>${m.name}</option>`).join('');
+  document.querySelectorAll('.sbb').forEach(function(b) { b.classList.toggle('on', b.dataset.s === t.status); });
+  var sel2 = document.getElementById('eR');
+  var memArr = Object.values(members).filter(function(m) { return typeof m === 'object' && m.id; });
+  sel2.innerHTML = '<option value="">Seleccionar...</option>' + memArr.map(function(m) {
+    return '<option value="' + m.name + '"' + (m.name === t.responsible ? ' selected' : '') + '>' + m.name + '</option>';
+  }).join('');
   document.getElementById('modal').classList.add('on');
 };
 
@@ -452,13 +443,13 @@ window.closeM = function() { document.getElementById('modal').classList.remove('
 
 window.setES = function(s) {
   document.getElementById('eS').value = s;
-  document.querySelectorAll('.sbb').forEach(b => b.classList.toggle('on', b.dataset.s === s));
+  document.querySelectorAll('.sbb').forEach(function(b) { b.classList.toggle('on', b.dataset.s === s); });
 };
 
-window.saveT = async function(e) {
+window.saveT = function(e) {
   e.preventDefault();
-  const n = document.getElementById('eN').value;
-  const data = {
+  var n = document.getElementById('eN').value;
+  var data = {
     status: document.getElementById('eS').value,
     buyer_name: document.getElementById('eB').value,
     phone: document.getElementById('ePh').value,
@@ -467,96 +458,97 @@ window.saveT = async function(e) {
     payment_date: document.getElementById('ePd').value,
     updated: Date.now()
   };
-  try {
-    await update(ref(db, 'tickets/' + n), data);
-    const aRef = ref(db, 'activity');
-    const key = push(aRef).key;
-    await set(ref(db, 'activity/' + key), { action:'editar', ticket: n, details: `${data.status} | ${data.buyer_name || 'S/N'} | ${data.responsible || 'S/R'}`, ts: Date.now() });
+  var updates = {};
+  updates['tickets/' + n] = data;
+  var aRef = db.ref('activity');
+  var key = aRef.push().key;
+  updates['activity/' + key] = { action:'editar', ticket: n, details: data.status + ' | ' + (data.buyer_name || 'S/N') + ' | ' + (data.responsible || 'S/R'), ts: Date.now() };
+  db.ref().update(updates).then(function() {
     closeM();
     showToast('Número ' + n + ' guardado', 's');
-  } catch(e) { showToast('Error: '+e.message, 'e'); }
+  }).catch(function(err) { showToast('Error: ' + err.message, 'e'); });
 };
 
-// --- Members ---
 function renderMembers() {
-  const l = document.getElementById('mList');
-  const arr = Object.values(members).filter(m => typeof m === 'object' && m.id);
+  var l = document.getElementById('mList');
+  var arr = Object.values(members).filter(function(m) { return typeof m === 'object' && m.id; });
   if (!arr.length) { l.innerHTML = '<div class="nd">No hay miembros</div>'; return; }
-  l.innerHTML = arr.map(m => `<div class="mi"><span class="mn">${m.name}</span><button class="btn bd2 bs" onclick="delM(${m.id})">Eliminar</button></div>`).join('');
+  l.innerHTML = arr.map(function(m) {
+    return '<div class="mi"><span class="mn">' + m.name + '</span><button class="btn bd2 bs" onclick="delM(' + m.id + ')">Eliminar</button></div>';
+  }).join('');
 }
 
-window.addM = async function() {
-  const inp = document.getElementById('nMi');
-  const name = inp.value.trim();
+window.addM = function() {
+  var inp = document.getElementById('nMi');
+  var name = inp.value.trim();
   if (!name) return;
-  try {
-    const snap = await get(ref(db, 'members'));
-    const d = snap.val() || {};
-    let next = d._next || 1;
-    // Check duplicate
-    const arr = Object.values(d).filter(m => typeof m === 'object' && m.id);
-    if (arr.find(m => m.name === name)) return showToast('Ya existe ese miembro', 'e');
-    await set(ref(db, 'members/' + next), { id: next, name });
-    await set(ref(db, 'members/_next'), next + 1);
-    inp.value = '';
-    showToast('"' + name + '" agregado', 's');
-  } catch(e) { showToast('Error', 'e'); }
+  db.ref('members').once('value').then(function(snap) {
+    var d = snap.val() || {};
+    var next = d._next || 1;
+    var arr = Object.values(d).filter(function(m) { return typeof m === 'object' && m.id; });
+    if (arr.find(function(m) { return m.name === name; })) return showToast('Ya existe ese miembro', 'e');
+    var updates = {};
+    updates['members/' + next] = { id: next, name: name };
+    updates['members/_next'] = next + 1;
+    db.ref().update(updates).then(function() {
+      inp.value = '';
+      showToast('"' + name + '" agregado', 's');
+    });
+  });
 };
 
-window.delM = async function(id) {
+window.delM = function(id) {
   if (!confirm('¿Eliminar este miembro?')) return;
-  await set(ref(db, 'members/' + id), null);
-  showToast('Miembro eliminado', 'i');
+  db.ref('members/' + id).remove().then(function() {
+    showToast('Miembro eliminado', 'i');
+  });
 };
 
-// --- Activity ---
 function renderActivity() {
-  const l = document.getElementById('aList');
-  const arr = Object.values(activity).filter(a => typeof a === 'object').sort((a,b) => (b.ts||0) - (a.ts||0)).slice(0, 50);
+  var l = document.getElementById('aList');
+  var arr = Object.values(activity).filter(function(a) { return typeof a === 'object'; }).sort(function(a,b) { return (b.ts||0) - (a.ts||0); }).slice(0, 50);
   if (!arr.length) { l.innerHTML = '<div class="nd">No hay actividad</div>'; return; }
-  l.innerHTML = arr.map(a => {
-    const d = new Date(a.ts);
-    const ts = d.toLocaleDateString('es') + ' ' + d.toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'});
-    return `<div class="ai"><div class="ail"><span class="aib ${a.action}">${a.action==='masivo'?'Masivo':'Editar'}</span><span class="ait">#${a.ticket}</span><span class="aid">${a.details||''}</span></div><span class="aitm">${ts}</span></div>`;
+  l.innerHTML = arr.map(function(a) {
+    var d = new Date(a.ts);
+    var ts = d.toLocaleDateString('es') + ' ' + d.toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'});
+    return '<div class="ai"><div class="ail"><span class="aib ' + a.action + '">' + (a.action==='masivo'?'Masivo':'Editar') + '</span><span class="ait">#' + a.ticket + '</span><span class="aid">' + (a.details||'') + '</span></div><span class="aitm">' + ts + '</span></div>';
   }).join('');
 }
 
 window.loadAct = function() { renderActivity(); };
 
-// --- Export ---
 window.exportCSV = function() {
-  const arr = Object.values(tickets).sort((a,b) => a.number.localeCompare(b.number));
-  let csv = 'Número,Estado,Comprador,Teléfono,Responsable,Monto,Fecha de Pago\n';
-  arr.forEach(t => { csv += `${t.number},${t.status},"${t.buyer_name||''}","${t.phone||''}","${t.responsible||''}",${t.amount||0},"${t.payment_date||''}"\n`; });
-  const blob = new Blob([csv], {type:'text/csv'});
-  const a = document.createElement('a');
+  var arr = Object.values(tickets).sort(function(a,b) { return a.number.localeCompare(b.number); });
+  var csv = 'Número,Estado,Comprador,Teléfono,Responsable,Monto,Fecha de Pago\n';
+  arr.forEach(function(t) { csv += t.number + ',' + t.status + ',"' + (t.buyer_name||'') + '","' + (t.phone||'') + '","' + (t.responsible||'') + '",' + (t.amount||0) + ',"' + (t.payment_date||'') + '"\n'; });
+  var blob = new Blob([csv], {type:'text/csv'});
+  var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'rifa-promuf-2026.csv';
   a.click();
   showToast('CSV descargado', 'i');
 };
 
-// --- Reset DB ---
-window.resetDB = async function() {
-  const pass = prompt('🔒 Ingresa la clave para resetear la base de datos:');
+window.resetDB = function() {
+  var pass = prompt('🔒 Ingresa la clave para resetear la base de datos:');
   if (pass === null) return;
   if (pass !== 'rifa2026') { showToast('Clave incorrecta', 'e'); return; }
   if (!confirm('¿Seguro que quieres resetear TODA la base de datos?\n\nEsto pondrá los 100 números en "Disponible" y borrará todo el historial.\n\nEsta acción NO se puede deshacer.')) return;
-  try {
-    const init = {};
-    for (let i = 0; i < 100; i++) {
-      const n = String(i).padStart(2, '0');
-      init[n] = { number: n, status: 'Disponible', buyer_name: '', phone: '', responsible: '', amount: 5, payment_date: '', created: Date.now(), updated: Date.now() };
-    }
-    await set(ref(db, 'tickets'), init);
-    await set(ref(db, 'activity'), null);
+  var init = {};
+  for (var i = 0; i < 100; i++) {
+    var n = String(i).padStart(2, '0');
+    init[n] = { number: n, status: 'Disponible', buyer_name: '', phone: '', responsible: '', amount: 5, payment_date: '', created: Date.now(), updated: Date.now() };
+  }
+  var updates = {};
+  updates['tickets'] = init;
+  updates['activity'] = null;
+  db.ref().update(updates).then(function() {
     showToast('Base de datos reseteada correctamente', 's');
-  } catch(e) { showToast('Error: '+e.message, 'e'); }
+  }).catch(function(e) { showToast('Error: ' + e.message, 'e'); });
 };
 
-// Close modal
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeM(); });
-document.getElementById('modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeM(); });
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeM(); });
+document.getElementById('modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) closeM(); });
 </script>
 </body>
 </html>
