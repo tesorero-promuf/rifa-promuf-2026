@@ -121,22 +121,9 @@
 <div class="setup-overlay on" id="setupScreen">
   <div class="setup-box">
     <h2>🎟️ Rifa PROMUF 2026</h2>
-    <p>Para usar la app necesitas una cuenta gratis de <b>Firebase</b> (la base de datos en la nube de Google). Sigue estos pasos:</p>
-    <div class="steps">
-      <b>1.</b> Ve a <a href="https://console.firebase.google.com" target="_blank" style="color:var(--pr)">console.firebase.google.com</a> y crea un proyecto (puede llamarse "RifaPROMUF").<br>
-      <b>2.</b> En el panel del proyecto, haz click en el ícono <b>Realtime Database</b> y luego <b>"Crear base de datos"</b>. Elige tu región y acepta.<br>
-      <b>3.</b> En la pestaña <b>Reglas</b> de la base de datos, reemplaza todo con:<br>
-      <code style="background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:.75rem">{ "rules": { ".read": true, ".write": true } }</code><br>
-      y haz click en <b>Publicar</b>.<br>
-      <b>4.</b> Ve a <b>Configuración</b> (ícono de engranaje) > <b>Tus apps</b> > añade una app <b>Web</b> (ícono &lt;/&gt;).<br>
-      <b>5.</b> Copia todo el objeto <code>firebaseConfig</code> que te muestra Google y pégalo aquí abajo.
-    </div>
-    <textarea id="configInput" placeholder='Pega aquí tu configuración de Firebase, por ejemplo:&#10;{&#10;  "apiKey": "AIza...",&#10;  "authDomain": "miprojecto.firebaseapp.com",&#10;  "databaseURL": "https://miprojecto-default-rtdb.firebaseio.com",&#10;  "projectId": "miprojecto",&#10;  "storageBucket": "miprojecto.appspot.com",&#10;  "messagingSenderId": "123456",&#10;  "appId": "1:123..."&#10;}'></textarea>
-    <div class="hint">Tus datos se guardan localmente en el navegador y se sincronizan con Firebase. Nadie más puede modificar tu configuración.</div>
+    <p>Conectando con la base de datos...</p>
     <div id="setupError" style="display:none;background:var(--rob);color:var(--ro);border:1px solid var(--ro);border-radius:8px;padding:10px;font-size:.8rem;margin-bottom:12px;text-align:left"></div>
     <div id="jsStatus" style="background:var(--bg3);color:var(--tx2);border-radius:8px;padding:8px;font-size:.75rem;margin-bottom:12px;text-align:center">⏳ Cargando página...</div>
-    <button class="btn bp" id="btnConnect" onclick="saveSetup()" style="width:100%;justify-content:center;padding:12px;font-size:.95rem">🚀 Conectar y Abrir la App</button>
-    <button class="btn bo" onclick="clearConfig()" style="width:100%;justify-content:center;padding:8px;font-size:.8rem;margin-top:8px">🗑️ Borrar configuración guardada</button>
   </div>
 </div>
 
@@ -243,9 +230,6 @@
 var storage = {};
 try { storage = localStorage; } catch(e) {}
 
-var cfgRaw = null;
-try { cfgRaw = storage.getItem('fb_config'); } catch(e) {}
-
 let db;
 var sdkFailed = false;
 
@@ -258,17 +242,18 @@ function jsOk(msg) {
   }
 }
 
-try {
-  jsOk('(JavaScript activo)');
-} catch(e) {}
+function showSetupError(msg) {
+  var el = document.getElementById('setupError');
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
 
-document.getElementById('btnConnect').addEventListener('click', function() {
-  saveSetup();
-});
+function showSetupScreen() {
+  document.getElementById('setupScreen').classList.add('on');
+}
 
 function sdkFail() {
   sdkFailed = true;
-  showSetupError('⚠️ No se pudo cargar el SDK de Firebase. Revisa tu conexión a internet o desactiva bloqueadores de anuncios, y recarga la página.');
+  showSetupError('⚠️ No se pudo cargar el SDK de Firebase. Revisa tu conexión a internet y recarga la página.');
 }
 
 window.onerror = function(msg) {
@@ -285,45 +270,6 @@ function showToast(msg, type) {
   c.appendChild(t);
   setTimeout(function() { t.remove(); }, 3500);
 }
-
-function showSetupError(msg) {
-  var el = document.getElementById('setupError');
-  if (el) { el.textContent = msg; el.style.display = 'block'; }
-}
-
-function showSetupScreen() {
-  document.getElementById('setupScreen').classList.add('on');
-}
-
-function parseConfig(raw) {
-  var text = raw.trim();
-  text = text.replace(/\/\/[^\n]*/g, '');
-  text = text.replace(/const\s+firebaseConfig\s*=\s*/g, '');
-  text = text.replace(/;\s*$/, '');
-  text = text.replace(/^\s*\{\s*$/, '{');
-  return JSON.parse(text);
-}
-
-window.clearConfig = function() {
-  try { storage.removeItem('fb_config'); } catch(e) {}
-  try { location.reload(); } catch(e) {}
-};
-
-window.saveSetup = function() {
-  var raw = document.getElementById('configInput').value.trim();
-  var errEl = document.getElementById('setupError');
-  if (errEl) errEl.style.display = 'none';
-  if (!raw) return showSetupError('Pega tu configuración de Firebase');
-  var cfg;
-  try {
-    cfg = parseConfig(raw);
-  } catch(e) {
-    return showSetupError('No se pudo leer la configuración. Copia TODO el bloque completo, incluyendo las llaves { }.');
-  }
-  if (!cfg.databaseURL) return showSetupError('Falta databaseURL en la configuración. Asegúrate de haber creado una Realtime Database.');
-  try { storage.setItem('fb_config', JSON.stringify(cfg)); } catch(e) {}
-  initApp(cfg);
-};
 
 function initApp(cfg) {
   try {
@@ -348,11 +294,22 @@ function initApp(cfg) {
   }
 }
 
-if (cfgRaw) {
-  try { initApp(JSON.parse(cfgRaw)); } catch(e) { showSetupScreen(); }
-} else {
-  showSetupScreen();
-}
+var FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDewoh1NtW4FhN-8Jxb8tuT1YHdh7tyqYI",
+  authDomain: "rifapromuf.firebaseapp.com",
+  databaseURL: "https://rifapromuf-default-rtdb.firebaseio.com",
+  projectId: "rifapromuf",
+  storageBucket: "rifapromuf.firebasestorage.app",
+  messagingSenderId: "800332752530",
+  appId: "1:800332752530:web:1a23c87caf2632251a284b",
+  measurementId: "G-RBQR7JXT95"
+};
+
+try {
+  jsOk('(JavaScript activo)');
+} catch(e) {}
+
+initApp(FIREBASE_CONFIG);
 
 // --- State ---
 var tickets = {};
