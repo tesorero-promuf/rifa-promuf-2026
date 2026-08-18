@@ -200,6 +200,11 @@
     <div class="amf"><input type="text" id="nMi" placeholder="Nombre..."><button class="btn bp" onclick="addM()">+ Agregar</button></div>
   </div>
   <div class="ml" id="mList"></div>
+  <div style="margin-top:30px;padding-top:20px;border-top:1px solid var(--bd)">
+    <h3 style="font-size:.95rem;margin-bottom:10px;color:var(--ro)">⚠️ Zona de Prueba</h3>
+    <p style="font-size:.8rem;color:var(--tx2);margin-bottom:12px">Esto resetea TODOS los números a "Disponible" y borra el historial de actividad. No se puede deshacer.</p>
+    <button class="btn bd2" onclick="resetDB()">🔄 Resetear Base de Datos</button>
+  </div>
 </section>
 
 <!-- Edit Modal -->
@@ -529,6 +534,22 @@ window.exportCSV = function() {
   a.download = 'rifa-promuf-2026.csv';
   a.click();
   showToast('CSV descargado', 'i');
+};
+
+// --- Reset DB ---
+window.resetDB = async function() {
+  if (!confirm('¿Seguro que quieres resetear TODA la base de datos?\n\nEsto pondrá los 100 números en "Disponible" y borrará todo el historial.\n\nEsta acción NO se puede deshacer.')) return;
+  if (!confirm('¿ÚLTIMA OPORTUNIDAD? Se borrarán todas las ventas registradas.')) return;
+  try {
+    const init = {};
+    for (let i = 0; i < 100; i++) {
+      const n = String(i).padStart(2, '0');
+      init[n] = { number: n, status: 'Disponible', buyer_name: '', phone: '', responsible: '', amount: 5, payment_date: '', created: Date.now(), updated: Date.now() };
+    }
+    await set(ref(db, 'tickets'), init);
+    await set(ref(db, 'activity'), null);
+    showToast('Base de datos reseteada correctamente', 's');
+  } catch(e) { showToast('Error: '+e.message, 'e'); }
 };
 
 // Close modal
