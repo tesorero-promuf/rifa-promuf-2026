@@ -538,8 +538,10 @@ window.exportCSV = function() {
 
 // --- Reset DB ---
 window.resetDB = async function() {
+  const pass = prompt('🔒 Ingresa la clave para resetear la base de datos:');
+  if (pass === null) return;
+  if (pass !== 'rifa2026') { showToast('Clave incorrecta', 'e'); return; }
   if (!confirm('¿Seguro que quieres resetear TODA la base de datos?\n\nEsto pondrá los 100 números en "Disponible" y borrará todo el historial.\n\nEsta acción NO se puede deshacer.')) return;
-  if (!confirm('¿ÚLTIMA OPORTUNIDAD? Se borrarán todas las ventas registradas.')) return;
   try {
     const init = {};
     for (let i = 0; i < 100; i++) {
