@@ -134,7 +134,8 @@
     <textarea id="configInput" placeholder='Pega aquí tu configuración de Firebase, por ejemplo:&#10;{&#10;  "apiKey": "AIza...",&#10;  "authDomain": "miprojecto.firebaseapp.com",&#10;  "databaseURL": "https://miprojecto-default-rtdb.firebaseio.com",&#10;  "projectId": "miprojecto",&#10;  "storageBucket": "miprojecto.appspot.com",&#10;  "messagingSenderId": "123456",&#10;  "appId": "1:123..."&#10;}'></textarea>
     <div class="hint">Tus datos se guardan localmente en el navegador y se sincronizan con Firebase. Nadie más puede modificar tu configuración.</div>
     <div id="setupError" style="display:none;background:var(--rob);color:var(--ro);border:1px solid var(--ro);border-radius:8px;padding:10px;font-size:.8rem;margin-bottom:12px;text-align:left"></div>
-    <button class="btn bp" onclick="saveSetup()" style="width:100%;justify-content:center;padding:12px;font-size:.95rem">🚀 Conectar y Abrir la App</button>
+    <div id="jsStatus" style="background:var(--bg3);color:var(--tx2);border-radius:8px;padding:8px;font-size:.75rem;margin-bottom:12px;text-align:center">⏳ Cargando página...</div>
+    <button class="btn bp" id="btnConnect" onclick="saveSetup()" style="width:100%;justify-content:center;padding:12px;font-size:.95rem">🚀 Conectar y Abrir la App</button>
     <button class="btn bo" onclick="clearConfig()" style="width:100%;justify-content:center;padding:8px;font-size:.8rem;margin-top:8px">🗑️ Borrar configuración guardada</button>
   </div>
 </div>
@@ -236,8 +237,8 @@
 
 <div class="tc3" id="toasts"></div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" onerror="sdkFail()"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" onerror="sdkFail()"></script>
+<script src="js/firebase-app-compat.js" onerror="sdkFail()"></script>
+<script src="js/firebase-database-compat.js" onerror="sdkFail()"></script>
 <script>
 var storage = {};
 try { storage = localStorage; } catch(e) {}
@@ -247,6 +248,23 @@ try { cfgRaw = storage.getItem('fb_config'); } catch(e) {}
 
 let db;
 var sdkFailed = false;
+
+function jsOk(msg) {
+  var el = document.getElementById('jsStatus');
+  if (el) {
+    el.textContent = '✅ Página cargada correctamente ' + msg;
+    el.style.background = 'rgba(34,197,94,.12)';
+    el.style.color = 'var(--gr)';
+  }
+}
+
+try {
+  jsOk('(JavaScript activo)');
+} catch(e) {}
+
+document.getElementById('btnConnect').addEventListener('click', function() {
+  saveSetup();
+});
 
 function sdkFail() {
   sdkFailed = true;
