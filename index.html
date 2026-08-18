@@ -127,6 +127,17 @@
   </div>
 </div>
 
+<div id="permBanner" style="display:none;background:var(--rob);border:1px solid var(--ro);color:var(--ro);border-radius:8px;padding:14px;margin:12px auto;max-width:1200px;font-size:.85rem;line-height:1.6">
+  <b>⛔ Firebase rechazó el guardado.</b> Tu base de datos está bloqueada para escrituras.<br><br>
+  Para arreglarlo (2 minutos):<br>
+  <b>1.</b> Entra a <a href="https://console.firebase.google.com" target="_blank" style="color:var(--pr)">console.firebase.google.com</a> con tu cuenta de Google.<br>
+  <b>2.</b> Abre el proyecto <b>rifapromuf</b>.<br>
+  <b>3.</b> En el menú izquierdo: <b>Build (Crear)</b> → <b>Realtime Database</b>.<br>
+  <b>4.</b> Ve a la pestaña <b>Reglas</b>, borra todo lo que haya y pega esto:<br>
+  <code style="display:block;background:var(--bg);padding:8px;border-radius:6px;margin:8px 0;font-size:.75rem;user-select:all">{ "rules": { ".read": true, ".write": true } }</code>
+  <b>5.</b> Haz click en <b>Publicar</b> y recarga la app.
+</div>
+
 <!-- Main App -->
 <header class="hd">
   <div>
@@ -247,6 +258,15 @@ function showSetupError(msg) {
   if (el) { el.textContent = msg; el.style.display = 'block'; }
 }
 
+function showPermError(err) {
+  var msg = '';
+  if (err) msg = String(err.code || err.message || err);
+  if (msg.indexOf('PERMISSION_DENIED') >= 0 || msg.indexOf('Access denied') >= 0) {
+    var b = document.getElementById('permBanner');
+    if (b) b.style.display = 'block';
+  }
+}
+
 function showSetupScreen() {
   document.getElementById('setupScreen').classList.add('on');
 }
@@ -334,21 +354,21 @@ function listenTickets() {
         var n = String(i).padStart(2, '0');
         init[n] = { number: n, status: 'Disponible', buyer_name: '', phone: '', responsible: '', amount: 5, payment_date: '', created: Date.now(), updated: Date.now() };
       }
-      tRef.set(init);
+      tRef.set(init).catch(function(err) {
+        showPermError(err);
+        showSetupError('⚠️ No se pudo crear la base de datos inicial. ' + (err.message || err.code || ''));
+      });
     }
   }).catch(function(err) {
-    if (err && err.code === 'PERMISSION_DENIED') {
-      showSetupScreen();
-      showSetupError('⛔ Firebase rechazó el acceso. En tu consola de Firebase: Realtime Database > Reglas, y publica exactamente: { "rules": { ".read": true, ".write": true } }');
-    } else if (err) {
-      showSetupScreen();
-      showSetupError('⚠️ Error de Firebase: ' + (err.message || err.code || err));
-    }
+    showPermError(err);
+    showSetupError('⛔ Firebase rechazó el acceso de lectura. Sigue las instrucciones del panel rojo para publicar las Reglas.');
   });
   tRef.on('value', function(s) {
     tickets = s.val() || {};
     renderGrid();
     calcStats();
+  }, function(err) {
+    showPermError(err);
   });
 }
 
@@ -356,12 +376,18 @@ function listenMembers() {
   var mRef = db.ref('members');
   mRef.once('value').then(function(snap) {
     if (!snap.exists()) {
-      mRef.set({ 1:{id:1,name:'Directiva 1'}, 2:{id:2,name:'Directiva 2'}, 3:{id:3,name:'Directiva 3'}, 4:{id:4,name:'Directiva 4'}, 5:{id:5,name:'Directiva 5'}, _next:6 });
+      mRef.set({ 1:{id:1,name:'Directiva 1'}, 2:{id:2,name:'Directiva 2'}, 3:{id:3,name:'Directiva 3'}, 4:{id:4,name:'Directiva 4'}, 5:{id:5,name:'Directiva 5'}, _next:6 }).catch(function(err) {
+        showPermError(err);
+      });
     }
+  }).catch(function(err) {
+    showPermError(err);
   });
   mRef.on('value', function(s) {
     members = s.val() || {};
     renderMembers();
+  }, function(err) {
+    showPermError(err);
   });
 }
 
@@ -445,15 +471,28 @@ function updateBA() {
 
 window.bulk = function(status) {
   if (!sel.size) return;
+  var nums = Array.from(sel);
   var updates = {};
-  sel.forEach(function(n) { updates['tickets/' + n + '/status'] = status; updates['tickets/' + n + '/updated'] = Date.now(); });
-  var aRef = db.ref('activity');
-  var key = aRef.push().key;
-  updates['activity/' + key] = { action:'masivo', ticket: Array.from(sel).join(','), details: sel.size + ' números → ' + status, ts: Date.now() };
+  nums.forEach(function(n) {
+    updates['tickets/' + n + '/status'] = status;
+    updates['tickets/' + n + '/updated'] = Date.now();
+  });
   db.ref().update(updates).then(function() {
-    sel.clear(); updateBA();
-    showToast('Números actualizados', 's');
-  }).catch(function(e) { showToast('Error: ' + e.message, 'e'); });
+    sel.clear();
+    updateBA();
+    showToast(nums.length + ' números → ' + status, 's');
+    try {
+      db.ref('activity').push({
+        action: 'masivo',
+        ticket: nums.join(','),
+        details: nums.length + ' números → ' + status,
+        ts: Date.now()
+      }).catch(function() {});
+    } catch(err) {}
+  }).catch(function(e) {
+    showPermError(e);
+    showToast('Error: ' + (e.message || e.code || e), 'e');
+  });
 };
 
 window.openM = function(n) {
@@ -486,6 +525,7 @@ window.saveT = function(e) {
   e.preventDefault();
   var n = document.getElementById('eN').value;
   var data = {
+    number: n,
     status: document.getElementById('eS').value,
     buyer_name: document.getElementById('eB').value,
     phone: document.getElementById('ePh').value,
@@ -494,15 +534,21 @@ window.saveT = function(e) {
     payment_date: document.getElementById('ePd').value,
     updated: Date.now()
   };
-  var updates = {};
-  updates['tickets/' + n] = data;
-  var aRef = db.ref('activity');
-  var key = aRef.push().key;
-  updates['activity/' + key] = { action:'editar', ticket: n, details: data.status + ' | ' + (data.buyer_name || 'S/N') + ' | ' + (data.responsible || 'S/R'), ts: Date.now() };
-  db.ref().update(updates).then(function() {
+  db.ref('tickets/' + n).set(data).then(function() {
     closeM();
     showToast('Número ' + n + ' guardado', 's');
-  }).catch(function(err) { showToast('Error: ' + err.message, 'e'); });
+    try {
+      db.ref('activity').push({
+        action: 'editar',
+        ticket: n,
+        details: data.status + ' | ' + (data.buyer_name || 'S/N') + ' | ' + (data.responsible || 'S/R'),
+        ts: Date.now()
+      }).catch(function() {});
+    } catch(err) {}
+  }).catch(function(err) {
+    showPermError(err);
+    showToast('Error: ' + (err.message || err.code || err), 'e');
+  });
 };
 
 function renderMembers() {
@@ -529,15 +575,15 @@ window.addM = function() {
     db.ref().update(updates).then(function() {
       inp.value = '';
       showToast('"' + name + '" agregado', 's');
-    });
-  });
+    }).catch(function(e) { showPermError(e); showToast('Error: ' + (e.message || e.code || e), 'e'); });
+  }).catch(function(e) { showPermError(e); });
 };
 
 window.delM = function(id) {
   if (!confirm('¿Eliminar este miembro?')) return;
   db.ref('members/' + id).remove().then(function() {
     showToast('Miembro eliminado', 'i');
-  });
+  }).catch(function(e) { showPermError(e); showToast('Error: ' + (e.message || e.code || e), 'e'); });
 };
 
 function renderActivity() {
@@ -580,7 +626,7 @@ window.resetDB = function() {
   updates['activity'] = null;
   db.ref().update(updates).then(function() {
     showToast('Base de datos reseteada correctamente', 's');
-  }).catch(function(e) { showToast('Error: ' + e.message, 'e'); });
+  }).catch(function(e) { showPermError(e); showToast('Error: ' + (e.message || e.code || e), 'e'); });
 };
 
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeM(); });
