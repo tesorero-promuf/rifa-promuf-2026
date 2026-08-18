@@ -133,6 +133,7 @@
     </div>
     <textarea id="configInput" placeholder='Pega aquí tu configuración de Firebase, por ejemplo:&#10;{&#10;  "apiKey": "AIza...",&#10;  "authDomain": "miprojecto.firebaseapp.com",&#10;  "databaseURL": "https://miprojecto-default-rtdb.firebaseio.com",&#10;  "projectId": "miprojecto",&#10;  "storageBucket": "miprojecto.appspot.com",&#10;  "messagingSenderId": "123456",&#10;  "appId": "1:123..."&#10;}'></textarea>
     <div class="hint">Tus datos se guardan localmente en el navegador y se sincronizan con Firebase. Nadie más puede modificar tu configuración.</div>
+    <div id="setupError" style="display:none;background:var(--rob);color:var(--ro);border:1px solid var(--ro);border-radius:8px;padding:10px;font-size:.8rem;margin-bottom:12px;text-align:left"></div>
     <button class="btn bp" onclick="saveSetup()" style="width:100%;justify-content:center;padding:12px;font-size:.95rem">🚀 Conectar y Abrir la App</button>
   </div>
 </div>
@@ -237,7 +238,12 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
-const cfgRaw = localStorage.getItem('fb_config');
+var storage = {};
+try { storage = localStorage; } catch(e) {}
+
+var cfgRaw = null;
+try { cfgRaw = storage.getItem('fb_config'); } catch(e) {}
+
 let db;
 
 function showToast(msg, type) {
@@ -250,21 +256,42 @@ function showToast(msg, type) {
   setTimeout(function() { t.remove(); }, 3500);
 }
 
+function showSetupError(msg) {
+  var el = document.getElementById('setupError');
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+  showToast(msg, 'e');
+}
+
+function parseConfig(raw) {
+  var text = raw.trim();
+  text = text.replace(/\/\/[^\n]*/g, '');
+  text = text.replace(/const\s+firebaseConfig\s*=\s*/g, '');
+  text = text.replace(/;\s*$/, '');
+  text = text.replace(/^\s*\{\s*$/, '{');
+  return JSON.parse(text);
+}
+
 window.saveSetup = function() {
   var raw = document.getElementById('configInput').value.trim();
-  if (!raw) return showToast('Pega tu configuración de Firebase', 'e');
+  var errEl = document.getElementById('setupError');
+  if (errEl) errEl.style.display = 'none';
+  if (!raw) return showSetupError('Pega tu configuración de Firebase');
+  var cfg;
   try {
-    var cfg = JSON.parse(raw);
-    if (!cfg.databaseURL) return showToast('Falta databaseURL en la config', 'e');
-    localStorage.setItem('fb_config', JSON.stringify(cfg));
-    initApp(cfg);
+    cfg = parseConfig(raw);
   } catch(e) {
-    showToast('JSON inválido. Verifica que copiaste todo.', 'e');
+    return showSetupError('No se pudo leer la configuración. Copia TODO el bloque completo, incluyendo las llaves { }.');
   }
+  if (!cfg.databaseURL) return showSetupError('Falta databaseURL en la configuración. Asegúrate de haber creado una Realtime Database.');
+  try { storage.setItem('fb_config', JSON.stringify(cfg)); } catch(e) {}
+  initApp(cfg);
 };
 
 function initApp(cfg) {
   try {
+    if (!window.firebase || !firebase.database) {
+      return showSetupError('El SDK de Firebase no cargó. Revisa tu conexión a internet y recarga la página.');
+    }
     firebase.initializeApp(cfg);
     db = firebase.database();
     document.getElementById('setupScreen').classList.remove('on');
@@ -273,7 +300,7 @@ function initApp(cfg) {
     listenActivity();
     document.getElementById('connSt').innerHTML = '<span class="dot dot-on"></span> Conectado';
   } catch(e) {
-    showToast('Error al conectar: ' + e.message, 'e');
+    showSetupError('Error al conectar: ' + e.message);
   }
 }
 
