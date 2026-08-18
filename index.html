@@ -183,10 +183,11 @@
     </div>
     <div class="ba" id="bAct" style="display:none">
       <span id="bc">0 sel.</span>
-      <button class="btn br" onclick="bulk('Reservado')">📌 Reservar</button>
-      <button class="btn bv" onclick="bulk('Vendido')">💰 Vender</button>
+      <button class="btn br" onclick="openBulk('Reservado')">📌 Reservar</button>
+      <button class="btn bv" onclick="openBulk('Vendido')">💰 Vender</button>
       <button class="btn bg" onclick="bulk('Disponible')">🔄 Liberar</button>
     </div>
+    <p style="font-size:.72rem;color:var(--tx2);width:100%">💡 Mantén presionado un número para seleccionarlo (puedes elegir varios). Luego usa Vender/Reservar y escribe los datos UNA vez: se aplican a todos los seleccionados.</p>
   </div>
   <div class="tg" id="grid"></div>
 </section>
@@ -337,6 +338,12 @@ var members = {};
 var activity = {};
 var curF = 'all';
 var sel = new Set();
+var bulkMode = false;
+var bulkNums = [];
+var tpTimer = null;
+var tpNum = null;
+var tpMoved = false;
+var suppressClick = false;
 
 window.go = function(t) {
   document.querySelectorAll('.tab').forEach(function(e) { e.classList.remove('on'); });
@@ -443,11 +450,40 @@ function renderGrid() {
     var hid = (!mf || !ms) ? 'hid' : '';
     var sl = sel.has(t.number) ? 'sel' : '';
     var sub = t.status === 'Disponible' ? '' : (t.buyer_name || t.status);
-    return '<div class="tc2 ' + st + ' ' + hid + ' ' + sl + '" data-n="' + t.number + '" onclick="hClick(event,\'' + t.number + '\')" ondblclick="openM(\'' + t.number + '\')"><span class="tn">' + t.number + '</span><span class="ts">' + sub + '</span></div>';
+    return '<div class="tc2 ' + st + ' ' + hid + ' ' + sl + '" data-n="' + t.number + '" onclick="hClick(event,\'' + t.number + '\')" ondblclick="openM(\'' + t.number + '\')" ontouchstart="touchStart(event,\'' + t.number + '\')" ontouchend="touchEnd()" ontouchmove="touchMove()"><span class="tn">' + t.number + '</span><span class="ts">' + sub + '</span></div>';
   }).join('');
 }
 
+window.touchStart = function(e, n) {
+  tpMoved = false;
+  tpNum = n;
+  if (tpTimer) clearTimeout(tpTimer);
+  tpTimer = setTimeout(function() {
+    if (!tpMoved && tpNum) {
+      suppressClick = true;
+      if (sel.has(tpNum)) sel.delete(tpNum); else sel.add(tpNum);
+      updateBA();
+      renderGrid();
+      tpNum = null;
+    }
+  }, 450);
+};
+
+window.touchEnd = function() {
+  if (tpTimer) clearTimeout(tpTimer);
+  tpTimer = null;
+};
+
+window.touchMove = function() {
+  tpMoved = true;
+  if (tpTimer) clearTimeout(tpTimer);
+};
+
 window.hClick = function(e, n) {
+  if (suppressClick) {
+    suppressClick = false;
+    return;
+  }
   if (e.ctrlKey || e.metaKey) {
     if (sel.has(n)) sel.delete(n); else sel.add(n);
     updateBA();
@@ -476,6 +512,12 @@ window.bulk = function(status) {
   nums.forEach(function(n) {
     updates['tickets/' + n + '/status'] = status;
     updates['tickets/' + n + '/updated'] = Date.now();
+    if (status === 'Disponible') {
+      updates['tickets/' + n + '/buyer_name'] = '';
+      updates['tickets/' + n + '/phone'] = '';
+      updates['tickets/' + n + '/responsible'] = '';
+      updates['tickets/' + n + '/payment_date'] = '';
+    }
   });
   db.ref().update(updates).then(function() {
     sel.clear();
@@ -495,7 +537,30 @@ window.bulk = function(status) {
   });
 };
 
+window.openBulk = function(status) {
+  if (!sel.size) return;
+  bulkMode = true;
+  bulkNums = Array.from(sel);
+  var first = tickets[bulkNums[0]] || {};
+  document.getElementById('mT').textContent = 'Guardar en ' + bulkNums.length + ' números';
+  document.getElementById('eN').value = '';
+  document.getElementById('eS').value = status;
+  document.getElementById('eB').value = '';
+  document.getElementById('ePh').value = '';
+  document.getElementById('eA').value = first.amount || 5;
+  document.getElementById('ePd').value = '';
+  document.querySelectorAll('.sbb').forEach(function(b) { b.classList.toggle('on', b.dataset.s === status); });
+  var sel2 = document.getElementById('eR');
+  var memArr = Object.values(members).filter(function(m) { return typeof m === 'object' && m.id; });
+  sel2.innerHTML = '<option value="">Seleccionar...</option>' + memArr.map(function(m) {
+    return '<option value="' + m.name + '">' + m.name + '</option>';
+  }).join('');
+  document.getElementById('modal').classList.add('on');
+};
+
 window.openM = function(n) {
+  bulkMode = false;
+  bulkNums = [];
   var t = tickets[n];
   if (!t) return;
   document.getElementById('mT').textContent = 'Editar Número ' + n;
@@ -523,9 +588,7 @@ window.setES = function(s) {
 
 window.saveT = function(e) {
   e.preventDefault();
-  var n = document.getElementById('eN').value;
   var data = {
-    number: n,
     status: document.getElementById('eS').value,
     buyer_name: document.getElementById('eB').value,
     phone: document.getElementById('ePh').value,
@@ -534,6 +597,36 @@ window.saveT = function(e) {
     payment_date: document.getElementById('ePd').value,
     updated: Date.now()
   };
+  if (bulkMode && bulkNums.length) {
+    var updates = {};
+    bulkNums.forEach(function(n) {
+      var d = JSON.parse(JSON.stringify(data));
+      d.number = n;
+      updates['tickets/' + n] = d;
+    });
+    db.ref().update(updates).then(function() {
+      closeM();
+      bulkMode = false;
+      bulkNums = [];
+      sel.clear();
+      updateBA();
+      showToast('Datos guardados en ' + Object.keys(updates).length + ' números', 's');
+      try {
+        db.ref('activity').push({
+          action: 'masivo',
+          ticket: Object.keys(updates).map(function(k) { return k.split('/')[1]; }).join(','),
+          details: Object.keys(updates).length + ' números → ' + data.status + ' | ' + (data.buyer_name || 'S/N'),
+          ts: Date.now()
+        }).catch(function() {});
+      } catch(err) {}
+    }).catch(function(err) {
+      showPermError(err);
+      showToast('Error: ' + (err.message || err.code || err), 'e');
+    });
+    return;
+  }
+  var n = document.getElementById('eN').value;
+  data.number = n;
   db.ref('tickets/' + n).set(data).then(function() {
     closeM();
     showToast('Número ' + n + ' guardado', 's');
