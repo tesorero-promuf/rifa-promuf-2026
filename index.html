@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Rifa PROMUF 2026</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎟️</text></svg>">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0f172a;--bg2:#1e293b;--bg3:#334155;--tx:#f1f5f9;--tx2:#94a3b8;--bd:#334155;--pr:#3b82f6;--pr2:#2563eb;--gr:#22c55e;--grb:rgba(34,197,94,.12);--am:#eab308;--amb:rgba(234,179,8,.12);--ro:#ef4444;--rob:rgba(239,68,68,.12);--r:10px}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+    .hd{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:var(--bg2);border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:10px}
+    .hd h1{font-size:1.3rem;font-weight:700}
+    .hd .sub{color:var(--tx2);font-size:.8rem}
+    .hd-r{display:flex;align-items:center;gap:10px}
+    .conn{display:flex;align-items:center;gap:5px;font-size:.75rem;color:var(--tx2)}
+    .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+    .dot-off{background:var(--ro)}.dot-on{background:var(--gr)}
+    .tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--bd);overflow-x:auto;padding:0 12px}
+    .tab{background:none;border:none;color:var(--tx2);padding:12px 18px;font-size:.85rem;cursor:pointer;border-bottom:2px solid transparent;transition:.2s;white-space:nowrap}
+    .tab:hover{color:var(--tx);background:var(--bg3)}
+    .tab.on{color:var(--pr);border-bottom-color:var(--pr);font-weight:600}
+    .tc{display:none;padding:20px;max-width:1200px;margin:0 auto}.tc.on{display:block}
+    .sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px}
+    .sc{background:var(--bg2);border-radius:var(--r);padding:18px;text-align:center;border:1px solid var(--bd);transition:.2s}
+    .sc:hover{transform:translateY(-2px)}
+    .sn{font-size:1.8rem;font-weight:800;line-height:1.2}
+    .sl{color:var(--tx2);font-size:.8rem;margin-top:3px}
+    .sc-g .sn{color:var(--gr)}.sc-a .sn{color:var(--am)}.sc-r .sn{color:var(--ro)}.sc-b .sn{color:var(--pr)}.sc-y .sn{color:var(--am)}
+    .sb{height:4px;background:var(--bd);border-radius:2px;margin-top:10px;overflow:hidden}
+    .sbf{height:100%;border-radius:2px;transition:width .5s}
+    .bf-g{background:var(--gr)}.bf-a{background:var(--am)}.bf-r{background:var(--ro)}
+    .cs{background:var(--bg2);border-radius:var(--r);padding:20px;border:1px solid var(--bd)}
+    .cs h3{margin-bottom:14px;font-size:.95rem}
+    .rc{display:flex;flex-direction:column;gap:8px}
+    .rr{display:flex;align-items:center;gap:10px}
+    .rn{width:120px;font-size:.8rem;text-align:right;color:var(--tx2)}
+    .rbw{flex:1;height:26px;background:var(--bg);border-radius:6px;overflow:hidden}
+    .rb{height:100%;background:var(--pr);border-radius:6px;transition:width .5s;display:flex;align-items:center;padding-left:8px;font-size:.7rem;font-weight:600;min-width:24px}
+    .rct{font-size:.75rem;color:var(--tx2);width:45px}
+    .nd{color:var(--tx2);font-style:italic;text-align:center;padding:16px}
+    .tb{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;align-items:center}
+    .sbx{flex:1;min-width:180px}
+    .sbx input{width:100%;padding:9px 12px;border-radius:var(--r);border:1px solid var(--bd);background:var(--bg2);color:var(--tx);font-size:.85rem;outline:none}
+    .sbx input:focus{border-color:var(--pr)}
+    .fb{display:flex;gap:5px;flex-wrap:wrap}
+    .fbtn{padding:7px 12px;border-radius:18px;border:1px solid var(--bd);background:var(--bg2);color:var(--tx2);cursor:pointer;font-size:.75rem;transition:.2s}
+    .fbtn:hover{border-color:var(--pr);color:var(--tx)}
+    .fbtn.on{background:var(--pr);color:#fff;border-color:var(--pr)}
+    .fbtn.fg.on{background:var(--gr);border-color:var(--gr)}
+    .fbtn.fa.on{background:var(--am);border-color:var(--am);color:#000}
+    .fbtn.fr.on{background:var(--ro);border-color:var(--ro)}
+    .ba{display:flex;align-items:center;gap:7px;background:var(--bg2);padding:7px 12px;border-radius:var(--r);border:1px solid var(--pr);flex-wrap:wrap}
+    #bc{font-size:.8rem;color:var(--pr);font-weight:600}
+    .tg{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:7px}
+    .tc2{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:7px;cursor:pointer;border:2px solid transparent;transition:.15s;font-weight:700;user-select:none}
+    .tc2:hover{transform:scale(1.08);z-index:2}
+    .tn{font-size:1.05rem}.ts{font-size:.5rem;margin-top:2px;opacity:.8;text-align:center;line-height:1.1;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
+    .td{background:var(--grb);border-color:rgba(34,197,94,.3);color:var(--gr)}.td:hover{border-color:var(--gr)}
+    .tr{background:var(--amb);border-color:rgba(234,179,8,.3);color:var(--am)}.tr:hover{border-color:var(--am)}
+    .tv{background:var(--rob);border-color:rgba(239,68,68,.3);color:var(--ro)}.tv:hover{border-color:var(--ro)}
+    .tc2.sel{box-shadow:0 0 0 3px var(--pr)}.tc2.hid{display:none}
+    .ah{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.ah h3{font-size:.95rem}
+    .al{display:flex;flex-direction:column;gap:7px}
+    .ai{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .ail{display:flex;align-items:center;gap:8px}
+    .aib{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7rem;font-weight:600}
+    .aib.actualizar{background:var(--amb);color:var(--am)}.aib.masivo{background:rgba(59,130,246,.15);color:var(--pr)}
+    .ait{font-weight:700;font-size:.85rem}.aid{color:var(--tx2);font-size:.75rem}.aitm{color:var(--tx2);font-size:.7rem;white-space:nowrap}
+    .mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px}.mh h3{font-size:.95rem}
+    .amf{display:flex;gap:7px}
+    .amf input{padding:7px 10px;border-radius:var(--r);border:1px solid var(--bd);background:var(--bg2);color:var(--tx);font-size:.8rem;outline:none}
+    .amf input:focus{border-color:var(--pr)}
+    .ml{display:flex;flex-direction:column;gap:7px}
+    .mi{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+    .mn{font-weight:600;font-size:.9rem}
+    .btn{padding:7px 14px;border-radius:var(--r);border:none;cursor:pointer;font-size:.8rem;font-weight:600;transition:.2s;display:inline-flex;align-items:center;gap:3px}
+    .bp{background:var(--pr);color:#fff}.bp:hover{background:var(--pr2)}
+    .bo{background:transparent;border:1px solid var(--bd);color:var(--tx2)}.bo:hover{border-color:var(--pr);color:var(--pr)}
+    .br{background:var(--am);color:#000}.bv{background:var(--ro);color:#fff}.bg{background:var(--gr);color:#fff}
+    .bs{padding:3px 8px;font-size:.7rem}
+    .bd2{background:transparent;color:var(--ro);border:1px solid var(--ro)}.bd2:hover{background:var(--ro);color:#fff}
+    .mo{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);justify-content:center;align-items:center;padding:14px}
+    .mo.on{display:flex}
+    .ml2{background:var(--bg2);border:1px solid var(--bd);border-radius:12px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 4px 24px rgba(0,0,0,.3)}
+    .mhd{display:flex;justify-content:space-between;align-items:center;padding:18px 20px 0}
+    .mhd h2{font-size:1.05rem}
+    .mx{background:none;border:none;color:var(--tx2);font-size:1.4rem;cursor:pointer;padding:3px}.mx:hover{color:var(--tx)}
+    #ef{padding:18px 20px 20px}
+    .fg2{margin-bottom:14px}
+    .fg2 label{display:block;font-size:.75rem;color:var(--tx2);margin-bottom:5px;font-weight:500}
+    .fg2 input,.fg2 select{width:100%;padding:9px 10px;border-radius:var(--r);border:1px solid var(--bd);background:var(--bg);color:var(--tx);font-size:.85rem;outline:none}
+    .fg2 input:focus,.fg2 select:focus{border-color:var(--pr)}
+    .fg2 select option{background:var(--bg);color:var(--tx)}
+    .sbs{display:flex;gap:7px}
+    .sbb{flex:1;padding:9px;border-radius:var(--r);border:2px solid var(--bd);background:var(--bg);color:var(--tx2);cursor:pointer;font-size:.75rem;font-weight:600;transition:.2s}
+    .sbb.sg:hover,.sbb.sg.on{border-color:var(--gr);color:var(--gr);background:var(--grb)}
+    .sbb.sa:hover,.sbb.sa.on{border-color:var(--am);color:var(--am);background:var(--amb)}
+    .sbb.sr:hover,.sbb.sr.on{border-color:var(--ro);color:var(--ro);background:var(--rob)}
+    .ma{display:flex;justify-content:flex-end;gap:7px;margin-top:20px}
+    .tc3{position:fixed;bottom:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:7px}
+    .tt{padding:10px 16px;border-radius:var(--r);font-size:.8rem;font-weight:500;animation:sI .3s;box-shadow:0 4px 24px rgba(0,0,0,.3)}
+    .tt-s{background:var(--gr);color:#000}.tt-e{background:var(--ro);color:#fff}.tt-i{background:var(--pr);color:#fff}
+    @keyframes sI{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+    .setup-overlay{display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);justify-content:center;align-items:center;padding:20px}
+    .setup-overlay.on{display:flex}
+    .setup-box{background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:32px;max-width:520px;width:100%;text-align:center}
+    .setup-box h2{margin-bottom:8px;font-size:1.3rem}
+    .setup-box p{color:var(--tx2);font-size:.85rem;margin-bottom:20px;line-height:1.5}
+    .setup-box .steps{text-align:left;margin:20px 0;background:var(--bg);border-radius:var(--r);padding:16px;font-size:.8rem;line-height:1.8;color:var(--tx2)}
+    .setup-box .steps b{color:var(--tx)}
+    .setup-box textarea{width:100%;height:160px;padding:10px;border-radius:var(--r);border:1px solid var(--bd);background:var(--bg);color:var(--gr);font-family:monospace;font-size:.75rem;resize:vertical;outline:none;margin:12px 0}
+    .setup-box textarea:focus{border-color:var(--pr)}
+    .setup-box .hint{font-size:.7rem;color:var(--tx2);margin-bottom:14px;text-align:left}
+    @media(max-width:600px){.hd{padding:10px 14px}.hd h1{font-size:1.1rem}.tab{padding:10px 12px;font-size:.78rem}.tc{padding:14px}.sg{grid-template-columns:repeat(2,1fr);gap:8px}.sn{font-size:1.4rem}.tg{grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:5px}.ml2{margin:6px}.rn{width:70px;font-size:.7rem}.setup-box{padding:20px}}
+  </style>
+</head>
+<body>
+
+<!-- Setup Screen -->
+<div class="setup-overlay on" id="setupScreen">
+  <div class="setup-box">
+    <h2>🎟️ Rifa PROMUF 2026</h2>
+    <p>Para usar la app necesitas una cuenta gratis de <b>Firebase</b> (la base de datos en la nube de Google). Sigue estos pasos:</p>
+    <div class="steps">
+      <b>1.</b> Ve a <a href="https://console.firebase.google.com" target="_blank" style="color:var(--pr)">console.firebase.google.com</a> y crea un proyecto (puede llamarse "RifaPROMUF").<br>
+      <b>2.</b> En el panel del proyecto, haz click en el ícono <b>Realtime Database</b> y luego <b>"Crear base de datos"</b>. Elige tu región y acepta.<br>
+      <b>3.</b> En la pestaña <b>Reglas</b> de la base de datos, reemplaza todo con:<br>
+      <code style="background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:.75rem">{ "rules": { ".read": true, ".write": true } }</code><br>
+      y haz click en <b>Publicar</b>.<br>
+      <b>4.</b> Ve a <b>Configuración</b> (ícono de engranaje) > <b>Tus apps</b> > añade una app <b>Web</b> (ícono &lt;/&gt;).<br>
+      <b>5.</b> Copia todo el objeto <code>firebaseConfig</code> que te muestra Google y pégalo aquí abajo.
+    </div>
+    <textarea id="configInput" placeholder='Pega aquí tu configuración de Firebase, por ejemplo:&#10;{&#10;  "apiKey": "AIza...",&#10;  "authDomain": "miprojecto.firebaseapp.com",&#10;  "databaseURL": "https://miprojecto-default-rtdb.firebaseio.com",&#10;  "projectId": "miprojecto",&#10;  "storageBucket": "miprojecto.appspot.com",&#10;  "messagingSenderId": "123456",&#10;  "appId": "1:123..."&#10;}'></textarea>
+    <div class="hint">Tus datos se guardan localmente en el navegador y se sincronizan con Firebase. Nadie más puede modificar tu configuración.</div>
+    <button class="btn bp" onclick="saveSetup()" style="width:100%;justify-content:center;padding:12px;font-size:.95rem">🚀 Conectar y Abrir la App</button>
+  </div>
+</div>
+
+<!-- Main App -->
+<header class="hd">
+  <div>
+    <h1>🎟️ Rifa PROMUF 2026</h1>
+    <span class="sub">Sistema de Gestión de Ventas</span>
+  </div>
+  <div class="hd-r">
+    <div class="conn" id="connSt"><span class="dot dot-off"></span> Conectando...</div>
+    <button class="btn bo" onclick="exportCSV()">📥 CSV</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab on" data-t="dash" onclick="go('dash')">📊 Dashboard</button>
+  <button class="tab" data-t="num" onclick="go('num')">🎟️ Números</button>
+  <button class="tab" data-t="act" onclick="go('act')">📋 Actividad</button>
+  <button class="tab" data-t="dir" onclick="go('dir')">👥 Directiva</button>
+</nav>
+
+<section class="tc on" id="v-dash">
+  <div class="sg">
+    <div class="sc"><div class="sn" id="sT">100</div><div class="sl">Total Números</div></div>
+    <div class="sc sc-g"><div class="sn" id="sD">0</div><div class="sl">Disponibles</div><div class="sb"><div class="sbf bf-g" id="bD"></div></div></div>
+    <div class="sc sc-a"><div class="sn" id="sR">0</div><div class="sl">Reservados</div><div class="sb"><div class="sbf bf-a" id="bR"></div></div></div>
+    <div class="sc sc-r"><div class="sn" id="sV">0</div><div class="sl">Vendidos</div><div class="sb"><div class="sbf bf-r" id="bV"></div></div></div>
+    <div class="sc sc-b"><div class="sn" id="sRc">$0</div><div class="sl">Recaudado</div></div>
+    <div class="sc sc-y"><div class="sn" id="sPc">$0</div><div class="sl">Por Cobrar</div></div>
+  </div>
+  <div class="cs">
+    <h3>Ventas por Responsable</h3>
+    <div id="rChart" class="rc"></div>
+  </div>
+</section>
+
+<section class="tc" id="v-num">
+  <div class="tb">
+    <div class="sbx"><input type="text" id="sIn" placeholder="🔍 Buscar número, comprador..." oninput="filter()"></div>
+    <div class="fb">
+      <button class="fbtn on" data-f="all" onclick="setF('all')">Todos</button>
+      <button class="fbtn fg" data-f="Disponible" onclick="setF('Disponible')">Disponibles</button>
+      <button class="fbtn fa" data-f="Reservado" onclick="setF('Reservado')">Reservados</button>
+      <button class="fbtn fr" data-f="Vendido" onclick="setF('Vendido')">Vendidos</button>
+    </div>
+    <div class="ba" id="bAct" style="display:none">
+      <span id="bc">0 sel.</span>
+      <button class="btn br" onclick="bulk('Reservado')">📌 Reservar</button>
+      <button class="btn bv" onclick="bulk('Vendido')">💰 Vender</button>
+      <button class="btn bg" onclick="bulk('Disponible')">🔄 Liberar</button>
+    </div>
+  </div>
+  <div class="tg" id="grid"></div>
+</section>
+
+<section class="tc" id="v-act">
+  <div class="ah"><h3>Registro de Actividad</h3><button class="btn bo" onclick="loadAct()">🔄</button></div>
+  <div class="al" id="aList"></div>
+</section>
+
+<section class="tc" id="v-dir">
+  <div class="mh"><h3>Miembros de la Junta Directiva</h3>
+    <div class="amf"><input type="text" id="nMi" placeholder="Nombre..."><button class="btn bp" onclick="addM()">+ Agregar</button></div>
+  </div>
+  <div class="ml" id="mList"></div>
+</section>
+
+<!-- Edit Modal -->
+<div class="mo" id="modal">
+  <div class="ml2">
+    <div class="mhd"><h2 id="mT">Editar Número 00</h2><button class="mx" onclick="closeM()">&times;</button></div>
+    <form id="ef" onsubmit="saveT(event)">
+      <input type="hidden" id="eN">
+      <div class="fg2">
+        <label>Estado</label>
+        <div class="sbs">
+          <button type="button" class="sbb sg on" data-s="Disponible" onclick="setES('Disponible')">✅ Disponible</button>
+          <button type="button" class="sbb sa" data-s="Reservado" onclick="setES('Reservado')">📌 Reservado</button>
+          <button type="button" class="sbb sr" data-s="Vendido" onclick="setES('Vendido')">💰 Vendido</button>
+        </div>
+        <input type="hidden" id="eS" value="Disponible">
+      </div>
+      <div class="fg2"><label>Comprador</label><input type="text" id="eB" placeholder="Nombre completo..."></div>
+      <div class="fg2"><label>Teléfono</label><input type="tel" id="ePh" placeholder="+503 7000 0000"></div>
+      <div class="fg2"><label>Responsable (Directiva)</label><select id="eR"><option value="">Seleccionar...</option></select></div>
+      <div class="fg2"><label>Monto ($)</label><input type="number" id="eA" value="5.00" min="0" step="0.01"></div>
+      <div class="fg2"><label>Fecha de Pago</label><input type="date" id="ePd"></div>
+      <div class="ma"><button type="button" class="btn bo" onclick="closeM()">Cancelar</button><button type="submit" class="btn bp">💾 Guardar</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="tc3" id="toasts"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getDatabase, ref, set, get, update, push, onValue, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+
+// --- Config ---
+const cfgRaw = localStorage.getItem('fb_config');
+let firebaseApp, db;
+
+function showToast(msg, type='i') {
+  const c = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = `tt tt-${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// --- Setup ---
+window.saveSetup = function() {
+  const raw = document.getElementById('configInput').value.trim();
+  if (!raw) return showToast('Pega tu configuración de Firebase', 'e');
+  try {
+    const cfg = JSON.parse(raw);
+    if (!cfg.databaseURL) return showToast('Falta databaseURL en la config', 'e');
+    localStorage.setItem('fb_config', JSON.stringify(cfg));
+    initApp(cfg);
+  } catch(e) {
+    showToast('JSON inválido. Verifica que copiaste todo.', 'e');
+  }
+};
+
+function initApp(cfg) {
+  try {
+    firebaseApp = initializeApp(cfg);
+    db = getDatabase(firebaseApp);
+    document.getElementById('setupScreen').classList.remove('on');
+    listenTickets();
+    listenMembers();
+    listenActivity();
+    document.getElementById('connSt').innerHTML = '<span class="dot dot-on"></span> Conectado';
+  } catch(e) {
+    showToast('Error al conectar: ' + e.message, 'e');
+  }
+}
+
+if (cfgRaw) {
+  try { initApp(JSON.parse(cfgRaw)); } catch(e) { document.getElementById('setupScreen').classList.add('on'); }
+} else {
+  document.getElementById('setupScreen').classList.add('on');
+}
+
+// --- State ---
+let tickets = {};
+let members = {};
+let activity = {};
+let curF = 'all';
+let sel = new Set();
+
+// --- Tabs ---
+window.go = function(t) {
+  document.querySelectorAll('.tab').forEach(e => e.classList.remove('on'));
+  document.querySelector(`.tab[data-t="${t}"]`).classList.add('on');
+  document.querySelectorAll('.tc').forEach(e => e.classList.remove('on'));
+  document.getElementById('v-'+t).classList.add('on');
+};
+
+// --- Listeners ---
+function listenTickets() {
+  const tRef = ref(db, 'tickets');
+  // Initialize if empty
+  get(tRef).then(snap => {
+    if (!snap.exists()) {
+      const init = {};
+      for (let i = 0; i < 100; i++) {
+        const n = String(i).padStart(2, '0');
+        init[n] = { number: n, status: 'Disponible', buyer_name: '', phone: '', responsible: '', amount: 5, payment_date: '', created: Date.now(), updated: Date.now() };
+      }
+      set(tRef, init);
+    }
+  });
+  onValue(tRef, s => {
+    tickets = s.val() || {};
+    renderGrid();
+    calcStats();
+  });
+}
+
+function listenMembers() {
+  const mRef = ref(db, 'members');
+  get(mRef).then(snap => {
+    if (!snap.exists()) {
+      set(mRef, { 1:{id:1,name:'Directiva 1'}, 2:{id:2,name:'Directiva 2'}, 3:{id:3,name:'Directiva 3'}, 4:{id:4,name:'Directiva 4'}, 5:{id:5,name:'Directiva 5'}, _next:6 });
+    }
+  });
+  onValue(mRef, s => {
+    members = s.val() || {};
+    renderMembers();
+  });
+}
+
+function listenActivity() {
+  const aRef = ref(db, 'activity');
+  onValue(aRef, s => {
+    activity = s.val() || {};
+    renderActivity();
+  });
+}
+
+// --- Stats ---
+function calcStats() {
+  const arr = Object.values(tickets);
+  const tot = arr.length || 100;
+  const d = arr.filter(t => t.status === 'Disponible').length;
+  const r = arr.filter(t => t.status === 'Reservado').length;
+  const v = arr.filter(t => t.status === 'Vendido').length;
+  const rc = arr.filter(t => t.status === 'Vendido').reduce((s,t) => s + (t.amount||0), 0);
+  const pc = arr.filter(t => t.status === 'Reservado').reduce((s,t) => s + (t.amount||0), 0);
+  document.getElementById('sT').textContent = tot;
+  document.getElementById('sD').textContent = d;
+  document.getElementById('sR').textContent = r;
+  document.getElementById('sV').textContent = v;
+  document.getElementById('sRc').textContent = '$' + rc.toFixed(2);
+  document.getElementById('sPc').textContent = '$' + pc.toFixed(2);
+  if (tot > 0) {
+    document.getElementById('bD').style.width = (d/tot*100)+'%';
+    document.getElementById('bR').style.width = (r/tot*100)+'%';
+    document.getElementById('bV').style.width = (v/tot*100)+'%';
+  }
+  // Chart
+  const resp = {};
+  arr.filter(t => t.status === 'Vendido' && t.responsible).forEach(t => {
+    if (!resp[t.responsible]) resp[t.responsible] = { name: t.responsible, count: 0, total: 0 };
+    resp[t.responsible].count++;
+    resp[t.responsible].total += t.amount || 0;
+  });
+  const rArr = Object.values(resp).sort((a,b) => b.count - a.count);
+  const ch = document.getElementById('rChart');
+  if (!rArr.length) { ch.innerHTML = '<div class="nd">Aún no hay ventas registradas</div>'; return; }
+  const mx = Math.max(...rArr.map(r => r.count));
+  ch.innerHTML = rArr.map(r => `<div class="rr"><span class="rn">${r.name}</span><div class="rbw"><div class="rb" style="width:${r.count/mx*100}%">${r.count}</div></div><span class="rct">$${r.total}</span></div>`).join('');
+}
+
+// --- Grid ---
+function renderGrid() {
+  const g = document.getElementById('grid');
+  const s = (document.getElementById('sIn')?.value || '').toLowerCase();
+  const arr = Object.values(tickets).sort((a,b) => a.number.localeCompare(b.number));
+  g.innerHTML = arr.map(t => {
+    const st = t.status === 'Disponible' ? 'td' : t.status === 'Reservado' ? 'tr' : 'tv';
+    const mf = curF === 'all' || t.status === curF;
+    const ms = !s || t.number.includes(s) || (t.buyer_name||'').toLowerCase().includes(s) || (t.responsible||'').toLowerCase().includes(s);
+    const hid = (!mf || !ms) ? 'hid' : '';
+    const sl = sel.has(t.number) ? 'sel' : '';
+    const sub = t.status === 'Disponible' ? '' : (t.buyer_name || t.status);
+    return `<div class="tc2 ${st} ${hid} ${sl}" data-n="${t.number}" onclick="hClick(event,'${t.number}')" ondblclick="openM('${t.number}')"><span class="tn">${t.number}</span><span class="ts">${sub}</span></div>`;
+  }).join('');
+}
+
+window.hClick = function(e, n) {
+  if (e.ctrlKey || e.metaKey) {
+    if (sel.has(n)) sel.delete(n); else sel.add(n);
+    updateBA();
+    renderGrid();
+  } else openM(n);
+};
+
+window.filter = function() { renderGrid(); };
+
+window.setF = function(f) {
+  curF = f;
+  document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
+  document.querySelector(`.fbtn[data-f="${f}"]`).classList.add('on');
+  renderGrid();
+};
+
+function updateBA() {
+  document.getElementById('bAct').style.display = sel.size ? 'flex' : 'none';
+  document.getElementById('bc').textContent = sel.size + ' sel.';
+}
+
+window.bulk = async function(status) {
+  if (!sel.size) return;
+  const updates = {};
+  sel.forEach(n => { updates['tickets/'+n+'/status'] = status; updates['tickets/'+n+'/updated'] = Date.now(); });
+  // Log
+  const aRef = ref(db, 'activity');
+  const key = push(aRef).key;
+  updates['activity/'+key] = { action:'masivo', ticket: [...sel].join(','), details: sel.size+' números → '+status, ts: Date.now() };
+  try {
+    await update(ref(db), updates);
+    sel.clear(); updateBA();
+    showToast(sel.size + ' números actualizados', 's');
+  } catch(e) { showToast('Error: '+e.message, 'e'); }
+  showToast(sel.size + ' números → ' + status, 's');
+};
+
+// --- Modal ---
+window.openM = async function(n) {
+  const t = tickets[n];
+  if (!t) return;
+  document.getElementById('mT').textContent = 'Editar Número ' + n;
+  document.getElementById('eN').value = n;
+  document.getElementById('eS').value = t.status;
+  document.getElementById('eB').value = t.buyer_name || '';
+  document.getElementById('ePh').value = t.phone || '';
+  document.getElementById('eA').value = t.amount || 5;
+  document.getElementById('ePd').value = t.payment_date || '';
+  document.querySelectorAll('.sbb').forEach(b => b.classList.toggle('on', b.dataset.s === t.status));
+  const sel2 = document.getElementById('eR');
+  const memArr = Object.values(members).filter(m => typeof m === 'object' && m.id);
+  sel2.innerHTML = '<option value="">Seleccionar...</option>' + memArr.map(m => `<option value="${m.name}" ${m.name === t.responsible ? 'selected' : ''}>${m.name}</option>`).join('');
+  document.getElementById('modal').classList.add('on');
+};
+
+window.closeM = function() { document.getElementById('modal').classList.remove('on'); };
+
+window.setES = function(s) {
+  document.getElementById('eS').value = s;
+  document.querySelectorAll('.sbb').forEach(b => b.classList.toggle('on', b.dataset.s === s));
+};
+
+window.saveT = async function(e) {
+  e.preventDefault();
+  const n = document.getElementById('eN').value;
+  const data = {
+    status: document.getElementById('eS').value,
+    buyer_name: document.getElementById('eB').value,
+    phone: document.getElementById('ePh').value,
+    responsible: document.getElementById('eR').value,
+    amount: parseFloat(document.getElementById('eA').value) || 5,
+    payment_date: document.getElementById('ePd').value,
+    updated: Date.now()
+  };
+  try {
+    await update(ref(db, 'tickets/' + n), data);
+    const aRef = ref(db, 'activity');
+    const key = push(aRef).key;
+    await set(ref(db, 'activity/' + key), { action:'editar', ticket: n, details: `${data.status} | ${data.buyer_name || 'S/N'} | ${data.responsible || 'S/R'}`, ts: Date.now() });
+    closeM();
+    showToast('Número ' + n + ' guardado', 's');
+  } catch(e) { showToast('Error: '+e.message, 'e'); }
+};
+
+// --- Members ---
+function renderMembers() {
+  const l = document.getElementById('mList');
+  const arr = Object.values(members).filter(m => typeof m === 'object' && m.id);
+  if (!arr.length) { l.innerHTML = '<div class="nd">No hay miembros</div>'; return; }
+  l.innerHTML = arr.map(m => `<div class="mi"><span class="mn">${m.name}</span><button class="btn bd2 bs" onclick="delM(${m.id})">Eliminar</button></div>`).join('');
+}
+
+window.addM = async function() {
+  const inp = document.getElementById('nMi');
+  const name = inp.value.trim();
+  if (!name) return;
+  try {
+    const snap = await get(ref(db, 'members'));
+    const d = snap.val() || {};
+    let next = d._next || 1;
+    // Check duplicate
+    const arr = Object.values(d).filter(m => typeof m === 'object' && m.id);
+    if (arr.find(m => m.name === name)) return showToast('Ya existe ese miembro', 'e');
+    await set(ref(db, 'members/' + next), { id: next, name });
+    await set(ref(db, 'members/_next'), next + 1);
+    inp.value = '';
+    showToast('"' + name + '" agregado', 's');
+  } catch(e) { showToast('Error', 'e'); }
+};
+
+window.delM = async function(id) {
+  if (!confirm('¿Eliminar este miembro?')) return;
+  await set(ref(db, 'members/' + id), null);
+  showToast('Miembro eliminado', 'i');
+};
+
+// --- Activity ---
+function renderActivity() {
+  const l = document.getElementById('aList');
+  const arr = Object.values(activity).filter(a => typeof a === 'object').sort((a,b) => (b.ts||0) - (a.ts||0)).slice(0, 50);
+  if (!arr.length) { l.innerHTML = '<div class="nd">No hay actividad</div>'; return; }
+  l.innerHTML = arr.map(a => {
+    const d = new Date(a.ts);
+    const ts = d.toLocaleDateString('es') + ' ' + d.toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'});
+    return `<div class="ai"><div class="ail"><span class="aib ${a.action}">${a.action==='masivo'?'Masivo':'Editar'}</span><span class="ait">#${a.ticket}</span><span class="aid">${a.details||''}</span></div><span class="aitm">${ts}</span></div>`;
+  }).join('');
+}
+
+window.loadAct = function() { renderActivity(); };
+
+// --- Export ---
+window.exportCSV = function() {
+  const arr = Object.values(tickets).sort((a,b) => a.number.localeCompare(b.number));
+  let csv = 'Número,Estado,Comprador,Teléfono,Responsable,Monto,Fecha de Pago\n';
+  arr.forEach(t => { csv += `${t.number},${t.status},"${t.buyer_name||''}","${t.phone||''}","${t.responsible||''}",${t.amount||0},"${t.payment_date||''}"\n`; });
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'rifa-promuf-2026.csv';
+  a.click();
+  showToast('CSV descargado', 'i');
+};
+
+// Close modal
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeM(); });
+document.getElementById('modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeM(); });
+</script>
+</body>
+</html>
