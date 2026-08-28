@@ -1,0 +1,21 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+    "tickets": {
+      "$tid": {
+        ".validate": "newData.hasChildren(['number','status','updated']) && $tid.matches(/^\\d{2}$/) && newData.child('status').val().matches(/^(Disponible|Reservado|Vendido)$/) && newData.child('amount').isNumber() && newData.child('number').val() == $tid && newData.child('updated').isNumber()"
+      }
+    },
+    "members": {
+      "$mid": {
+        ".validate": "$mid == '_next' ? newData.isNumber() : (!newData.exists() || (newData.hasChildren(['id','name']) && newData.child('id').isNumber() && newData.child('name').isString()))"
+      }
+    },
+    "activity": {
+      "$aid": {
+        ".validate": "newData.hasChildren(['action','ts']) && newData.child('ts').isNumber() && newData.child('action').isString()"
+      }
+    }
+  }
+}

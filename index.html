@@ -133,9 +133,10 @@
   <b>1.</b> Entra a <a href="https://console.firebase.google.com" target="_blank" style="color:var(--pr)">console.firebase.google.com</a> con tu cuenta de Google.<br>
   <b>2.</b> Abre el proyecto <b>rifapromuf</b>.<br>
   <b>3.</b> En el menú izquierdo: <b>Build (Crear)</b> → <b>Realtime Database</b>.<br>
-  <b>4.</b> Ve a la pestaña <b>Reglas</b>, borra todo lo que haya y pega esto:<br>
-  <code style="display:block;background:var(--bg);padding:8px;border-radius:6px;margin:8px 0;font-size:.75rem;user-select:all">{ "rules": { ".read": true, ".write": true } }</code>
-  <b>5.</b> Haz click en <b>Publicar</b> y recarga la app.
+  <b>4.</b> En el menú izquierdo: <b>Build (Crear)</b> → <b>Authentication</b> → <b>Sign-in method</b> → habilita <b>Anonymous</b> y guarda.<br>
+  <b>5.</b> Ve a <b>Realtime Database</b> → pestaña <b>Reglas</b>, borra todo y pega las Reglas seguras de abajo (también están en el archivo <code>database.rules.json</code> de este proyecto).<br>
+  <code style="display:block;background:var(--bg);padding:8px;border-radius:6px;margin:8px 0;font-size:.7rem;user-select:all;white-space:pre-wrap">{ "rules": { ".read": "auth != null", ".write": "auth != null", "tickets": { "$tid": { ".validate": "newData.hasChildren(['number','status','updated']) &amp;&amp; $tid.matches(/^\\d{2}$/) &amp;&amp; newData.child('status').val().matches(/^(Disponible|Reservado|Vendido)$/) &amp;&amp; newData.child('amount').isNumber() &amp;&amp; newData.child('number').val() == $tid &amp;&amp; newData.child('updated').isNumber()" } }, "members": { "$mid": { ".validate": "$mid == '_next' ? newData.isNumber() : (!newData.exists() || (newData.hasChildren(['id','name']) &amp;&amp; newData.child('id').isNumber() &amp;&amp; newData.child('name').isString()))" } }, "activity": { "$aid": { ".validate": "newData.hasChildren(['action','ts']) &amp;&amp; newData.child('ts').isNumber() &amp;&amp; newData.child('action').isString()" } } } }</code>
+  <b>6.</b> Haz click en <b>Publicar</b> y recarga la app. (La app inicia sesión anónima sola; ya no se usan reglas abiertas.)
 </div>
 
 <!-- Main App -->
@@ -238,6 +239,7 @@
 
 <script src="js/firebase-app-compat.js" onerror="sdkFail()"></script>
 <script src="js/firebase-database-compat.js" onerror="sdkFail()"></script>
+<script src="js/firebase-auth-compat.js" onerror="sdkFail()"></script>
 <script>
 var storage = {};
 try { storage = localStorage; } catch(e) {}
@@ -300,16 +302,24 @@ function initApp(cfg) {
     if (!firebase.apps.length) firebase.initializeApp(cfg);
     db = firebase.database();
     document.getElementById('setupScreen').classList.remove('on');
-    listenTickets();
-    listenMembers();
-    listenActivity();
-    document.getElementById('connSt').innerHTML = '<span class="dot dot-on"></span> Conectado';
-    setTimeout(function() {
-      if (!Object.keys(tickets).length) {
-        showSetupScreen();
-        showSetupError('⚠️ La app abrió pero Firebase no envía datos. Causas más comunes: 1) En tu consola de Firebase ve a Realtime Database > Reglas y publica: { "rules": { ".read": true, ".write": true } }  2) Revisa que el databaseURL sea correcto.');
-      }
-    }, 6000);
+    document.getElementById('connSt').innerHTML = '<span class="dot"></span> Iniciando sesión…';
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
+    firebase.auth().signInAnonymously().then(function() {
+      document.getElementById('connSt').innerHTML = '<span class="dot dot-on"></span> Conectado';
+      listenTickets();
+      listenMembers();
+      listenActivity();
+      setTimeout(function() {
+        if (!Object.keys(tickets).length) {
+          showSetupScreen();
+          showSetupError('⚠️ La app abrió pero Firebase no envía datos. Causas más comunes: 1) En tu consola de Firebase habilita "Anonymous" en Authentication > Sign-in method.  2) Publica las Reglas seguras en Realtime Database > Reglas.  3) Revisa que el databaseURL sea correcto.');
+        }
+      }, 6000);
+    }).catch(function(err) {
+      document.getElementById('connSt').innerHTML = '<span class="dot dot-off"></span> Sin sesión';
+      showSetupScreen();
+      showSetupError('⛔ No se pudo iniciar sesión anónima. Ve a Firebase > Authentication > Sign-in method y habilita "Anonymous". Detalle: ' + (err && err.message ? err.message : err));
+    });
   } catch(e) {
     showSetupError('Error al conectar: ' + e.message);
   }
