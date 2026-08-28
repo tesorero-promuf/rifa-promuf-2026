@@ -480,15 +480,16 @@ function refreshResp() {
   var sel = document.getElementById('rIn');
   if (!sel) return;
   var vals = {};
-  Object.values(tickets).forEach(function(t) { var r = (t.responsible||'').trim(); if (r) vals[r] = 1; });
+  Object.values(tickets).forEach(function(t) { var r = (t.responsible||'').trim(); if (r) vals[r] = (vals[r] || 0) + 1; });
   var list = Object.keys(vals).sort(function(a,b) { return a.localeCompare(b); });
   if (curR && list.indexOf(curR) === -1) curR = '';
-  var sig = list.join('|') + '#' + (curR || '');
+  var sig = list.map(function(r){ return r + ':' + vals[r]; }).join('|') + '#' + (curR || '');
   if (sel._sig === sig) return;
   sel._sig = sig;
   var cur = curR || '';
-  sel.innerHTML = '<option value="">Todos los responsables</option>' + list.map(function(r) {
-    return '<option value="' + esc(r) + '"' + (r === cur ? ' selected' : '') + '>' + esc(r) + '</option>';
+  var total = Object.values(tickets).length;
+  sel.innerHTML = '<option value="">Todos los responsables (' + total + ')</option>' + list.map(function(r) {
+    return '<option value="' + esc(r) + '"' + (r === cur ? ' selected' : '') + '>' + esc(r) + ' (' + vals[r] + ')</option>';
   }).join('');
 }
 
