@@ -43,6 +43,8 @@
     .sbx{flex:1;min-width:180px}
     .sbx input{width:100%;padding:9px 12px;border-radius:var(--r);border:1px solid var(--bd);background:var(--bg2);color:var(--tx);font-size:.85rem;outline:none}
     .sbx input:focus{border-color:var(--pr)}
+    .rsel{padding:9px 12px;border-radius:var(--r);border:1px solid var(--bd);background:var(--bg2);color:var(--tx);font-size:.8rem;outline:none;min-width:160px;max-width:100%}
+    .rsel:focus{border-color:var(--pr)}
     .fb{display:flex;gap:5px;flex-wrap:wrap}
     .fbtn{padding:7px 12px;border-radius:18px;border:1px solid var(--bd);background:var(--bg2);color:var(--tx2);cursor:pointer;font-size:.75rem;transition:.2s}
     .fbtn:hover{border-color:var(--pr);color:var(--tx)}
@@ -182,6 +184,7 @@
       <button class="fbtn fa" data-f="Reservado" onclick="setF('Reservado')">Reservados</button>
       <button class="fbtn fr" data-f="Vendido" onclick="setF('Vendido')">Vendidos</button>
     </div>
+    <div class="sbx"><select id="rIn" class="rsel" onchange="setR(this.value)"><option value="">Todos los responsables</option></select></div>
     <div class="ba" id="bAct" style="display:none">
       <span id="bc">0 sel.</span>
       <button class="btn br" onclick="openBulk('Reservado')">📌 Reservar</button>
@@ -347,6 +350,7 @@ var tickets = {};
 var members = {};
 var activity = {};
 var curF = 'all';
+var curR = '';
 var sel = new Set();
 var bulkMode = false;
 var bulkNums = [];
@@ -450,19 +454,45 @@ function calcStats() {
 }
 
 function renderGrid() {
+  refreshResp();
   var g = document.getElementById('grid');
   var s = (document.getElementById('sIn') ? document.getElementById('sIn').value : '').toLowerCase();
   var arr = Object.values(tickets).sort(function(a,b) { return a.number.localeCompare(b.number); });
   g.innerHTML = arr.map(function(t) {
     var st = t.status === 'Disponible' ? 'td' : t.status === 'Reservado' ? 'tr' : 'tv';
     var mf = curF === 'all' || t.status === curF;
+    var mr = !curR || (t.responsible||'') === curR;
     var ms = !s || t.number.includes(s) || (t.buyer_name||'').toLowerCase().includes(s) || (t.responsible||'').toLowerCase().includes(s);
-    var hid = (!mf || !ms) ? 'hid' : '';
+    var hid = (!mf || !mr || !ms) ? 'hid' : '';
     var sl = sel.has(t.number) ? 'sel' : '';
     var sub = t.status === 'Disponible' ? '' : (t.buyer_name || t.status);
     return '<div class="tc2 ' + st + ' ' + hid + ' ' + sl + '" data-n="' + t.number + '" onclick="hClick(event,\'' + t.number + '\')" ondblclick="openM(\'' + t.number + '\')" ontouchstart="touchStart(event,\'' + t.number + '\')" ontouchend="touchEnd()" ontouchmove="touchMove()"><span class="tn">' + t.number + '</span><span class="ts">' + sub + '</span></div>';
   }).join('');
 }
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, function(c) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+function refreshResp() {
+  var sel = document.getElementById('rIn');
+  if (!sel) return;
+  var vals = {};
+  Object.values(tickets).forEach(function(t) { var r = (t.responsible||'').trim(); if (r) vals[r] = 1; });
+  var list = Object.keys(vals).sort(function(a,b) { return a.localeCompare(b); });
+  if (curR && list.indexOf(curR) === -1) curR = '';
+  var sig = list.join('|') + '#' + (curR || '');
+  if (sel._sig === sig) return;
+  sel._sig = sig;
+  var cur = curR || '';
+  sel.innerHTML = '<option value="">Todos los responsables</option>' + list.map(function(r) {
+    return '<option value="' + esc(r) + '"' + (r === cur ? ' selected' : '') + '>' + esc(r) + '</option>';
+  }).join('');
+}
+
+window.setR = function(v) { curR = v; renderGrid(); };
 
 window.touchStart = function(e, n) {
   tpMoved = false;
